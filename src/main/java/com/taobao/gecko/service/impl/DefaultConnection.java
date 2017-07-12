@@ -44,11 +44,9 @@ import java.util.concurrent.TimeoutException;
 
 
 /**
- * 
  * 连接的封装
- * 
+ *
  * @author boyan
- * 
  * @since 1.0, 2009-12-15 下午02:47:00
  */
 
@@ -62,11 +60,8 @@ public class DefaultConnection implements Connection {
 
     /**
      * 单连接请求的超时任务
-     * 
-     * 
-     * 
+     *
      * @author boyan
-     * 
      * @since 1.0, 2009-12-18 下午03:00:55
      */
     private static final class SingleRequestCallBackRunner implements Runnable {
@@ -84,10 +79,9 @@ public class DefaultConnection implements Connection {
         public void run() {
             // 通知timeout
             final DefaultConnection defaultConnection = (DefaultConnection) SingleRequestCallBackRunner.this.connection;
-            final BooleanAckCommand timeoutCommand =
-                    defaultConnection.createTimeoutCommand(
-                        SingleRequestCallBackRunner.this.requestCallBack.getRequestCommandHeader(),
-                        SingleRequestCallBackRunner.this.connection.getRemoteSocketAddress());
+            final BooleanAckCommand timeoutCommand = defaultConnection.createTimeoutCommand(
+                    SingleRequestCallBackRunner.this.requestCallBack.getRequestCommandHeader(),
+                    SingleRequestCallBackRunner.this.connection.getRemoteSocketAddress());
             this.requestCallBack.cancelWrite(this.connection);
             this.requestCallBack.onResponse(null, timeoutCommand, this.connection);
         }
@@ -95,9 +89,7 @@ public class DefaultConnection implements Connection {
 
 
     private BooleanAckCommand createTimeoutCommand(final CommandHeader header, final InetSocketAddress address) {
-        final BooleanAckCommand value =
-                this.remotingContext.getCommandFactory().createBooleanAckCommand(header, ResponseStatus.TIMEOUT,
-                    "等待响应超时");
+        final BooleanAckCommand value = this.remotingContext.getCommandFactory().createBooleanAckCommand(header, ResponseStatus.TIMEOUT, "等待响应超时");
         value.setResponseStatus(ResponseStatus.TIMEOUT);
         value.setResponseTime(System.currentTimeMillis());
         value.setResponseHost(address);
@@ -167,11 +159,11 @@ public class DefaultConnection implements Connection {
             // 让callBack超时
             if (requestCallBack != null) {
                 requestCallBack.onResponse(this.removeOpaqueToGroupMapping(opaque),
-                    this.createTimeoutCommand(new CommandHeader() {
-                        public Integer getOpaque() {
-                            return opaque;
-                        }
-                    }, this.getRemoteSocketAddress()), this);
+                        this.createTimeoutCommand(new CommandHeader() {
+                            public Integer getOpaque() {
+                                return opaque;
+                            }
+                        }, this.getRemoteSocketAddress()), this);
             }
 
         }
@@ -206,11 +198,11 @@ public class DefaultConnection implements Connection {
             if (requestCallBack != null && requestCallBack.isInvalid(now)) {
                 // 让callBack超时
                 requestCallBack.onResponse(this.removeOpaqueToGroupMapping(opaque),
-                    this.createTimeoutCommand(new CommandHeader() {
-                        public Integer getOpaque() {
-                            return opaque;
-                        }
-                    }, this.getRemoteSocketAddress()), this);
+                        this.createTimeoutCommand(new CommandHeader() {
+                            public Integer getOpaque() {
+                                return opaque;
+                            }
+                        }, this.getRemoteSocketAddress()), this);
                 count++;
             }
         }
@@ -244,7 +236,7 @@ public class DefaultConnection implements Connection {
     private void checkFlow() throws NotifyRemotingException {
         if (this.session.getScheduleWritenBytes() > this.remotingContext.getConfig().getMaxScheduleWrittenBytes()) {
             throw new NotifyRemotingException("发送消息失败，超过流量限制["
-                    + this.remotingContext.getConfig().getMaxScheduleWrittenBytes() + "字节],remoteAddr:"+RemotingUtils.getAddrString(session.getRemoteSocketAddress()));
+                    + this.remotingContext.getConfig().getMaxScheduleWrittenBytes() + "字节],remoteAddr:" + RemotingUtils.getAddrString(session.getRemoteSocketAddress()));
         }
     }
 
@@ -257,12 +249,11 @@ public class DefaultConnection implements Connection {
         this.checkFlow();
         final SingleRequestCallBack requestCallBack =
                 new SingleRequestCallBack(requestCommand.getRequestHeader(), TimeUnit.MILLISECONDS.convert(time,
-                    timeUnit));
+                        timeUnit));
         this.addRequestCallBack(requestCommand.getOpaque(), requestCallBack);
         try {
             requestCallBack.addWriteFuture(this, this.asyncWriteToSession(requestCommand));
-        }
-        catch (final Throwable t) {
+        } catch (final Throwable t) {
             this.removeRequestCallBack(requestCommand.getOpaque());
             throw new NotifyRemotingException(t);
         }
@@ -290,7 +281,6 @@ public class DefaultConnection implements Connection {
         return this.requestCallBackMap.get(opaque);
     }
 
-
     public RequestCallBack removeRequestCallBack(final Integer opaque) {
         final RequestCallBack removed = this.requestCallBackMap.remove(opaque);
         if (removed != null) {
@@ -302,7 +292,7 @@ public class DefaultConnection implements Connection {
 
     /**
      * 移除opaque到group的映射，仅用于多分组发送
-     * 
+     *
      * @param opaque
      * @return
      */
@@ -313,7 +303,7 @@ public class DefaultConnection implements Connection {
 
     /**
      * 添加opaque到group的映射，仅用于多分组发送
-     * 
+     *
      * @param opaque
      * @return
      */
@@ -335,7 +325,7 @@ public class DefaultConnection implements Connection {
 
 
     public void send(final RequestCommand requestCommand, final SingleRequestCallBackListener listener,
-            final long time, final TimeUnit timeUnit) throws NotifyRemotingException {
+                     final long time, final TimeUnit timeUnit) throws NotifyRemotingException {
         if (requestCommand == null) {
             throw new NotifyRemotingException("Null message");
         }
@@ -355,8 +345,7 @@ public class DefaultConnection implements Connection {
         try {
             requestCallBack.addWriteFuture(this, this.asyncWriteToSession(requestCommand));
             this.session.insertTimer(timerRef);
-        }
-        catch (final Throwable t) {
+        } catch (final Throwable t) {
             // 切记移除callBack
             this.removeRequestCallBack(requestCommand.getOpaque());
             throw new NotifyRemotingException(t);
@@ -385,8 +374,7 @@ public class DefaultConnection implements Connection {
     private Future<Boolean> asyncWriteToSession(final Object packet) {
         if (this.writeInterruptibly) {
             return this.session.asyncWriteInterruptibly(packet);
-        }
-        else {
+        } else {
             return this.session.asyncWrite(packet);
         }
     }
@@ -417,8 +405,7 @@ public class DefaultConnection implements Connection {
         this.setAllowReconnect(allowReconnect);
         try {
             this.session.close();
-        }
-        catch (final Exception e) {
+        } catch (final Exception e) {
             throw new NotifyRemotingException(e);
         }
     }
@@ -474,12 +461,10 @@ public class DefaultConnection implements Connection {
         try {
             if (this.writeInterruptibly) {
                 this.session.writeInterruptibly(packet);
-            }
-            else {
+            } else {
                 this.session.write(packet);
             }
-        }
-        catch (final Throwable t) {
+        } catch (final Throwable t) {
             throw new NotifyRemotingException(t);
         }
     }
@@ -491,14 +476,14 @@ public class DefaultConnection implements Connection {
 
 
     public void transferFrom(final IoBuffer head, final IoBuffer tail, final FileChannel channel, final long position,
-            final long size) {
+                             final long size) {
         this.session.transferFrom(head, tail, channel, position, size);
     }
 
 
     public void transferFrom(final IoBuffer head, final IoBuffer tail, final FileChannel channel, final long position,
-            final long size, final Integer opaque, final SingleRequestCallBackListener listener, final long time,
-            final TimeUnit unit) throws NotifyRemotingException {
+                             final long size, final Integer opaque, final SingleRequestCallBackListener listener, final long time,
+                             final TimeUnit unit) throws NotifyRemotingException {
         if (channel == null) {
             throw new NotifyRemotingException("Null source channel");
         }
@@ -521,8 +506,7 @@ public class DefaultConnection implements Connection {
         try {
             requestCallBack.addWriteFuture(this, this.session.transferFrom(head, tail, channel, position, size));
             this.session.insertTimer(timerRef);
-        }
-        catch (final Throwable t) {
+        } catch (final Throwable t) {
             // 切记移除callBack
             this.removeRequestCallBack(opaque);
             throw new NotifyRemotingException(t);

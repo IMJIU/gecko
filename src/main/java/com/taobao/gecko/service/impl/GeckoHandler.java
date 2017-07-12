@@ -48,11 +48,9 @@ import com.taobao.gecko.service.exception.NotifyRemotingException;
 
 
 /**
- * 
  * 网络层的业务处理器
- * 
+ *
  * @author boyan
- * 
  * @since 1.0, 2009-12-15 上午11:14:51
  */
 
@@ -60,9 +58,8 @@ public class GeckoHandler implements Handler {
 
     /**
      * 请求处理器的任务包装
-     * 
+     *
      * @author boyan
-     * 
      */
     private static final class ProcessorRunner<T extends RequestCommand> implements Runnable {
         private final DefaultConnection defaultConnection;
@@ -71,7 +68,7 @@ public class GeckoHandler implements Handler {
 
 
         private ProcessorRunner(final DefaultConnection defaultConnection, final RequestProcessor<T> processor,
-                final T message) {
+                                final T message) {
             this.defaultConnection = defaultConnection;
             this.processor = processor;
             this.message = message;
@@ -85,9 +82,8 @@ public class GeckoHandler implements Handler {
 
     /**
      * 心跳命令的异步监听器
-     * 
+     *
      * @author boyan
-     * 
      */
     private final static class HeartBeatListener implements SingleRequestCallBackListener {
         private final Connection conn;
@@ -105,6 +101,7 @@ public class GeckoHandler implements Handler {
 
 
         public void onException(final Exception e) {
+           e.printStackTrace();
             this.innerCloseConnection(this.conn);
         }
 
@@ -116,13 +113,11 @@ public class GeckoHandler implements Handler {
                     count++;
                     if (count < 3) {
                         conn.setAttribute(HEARBEAT_FAIL_COUNT, count);
-                    }
-                    else {
+                    } else {
                         this.innerCloseConnection(conn);
                     }
                 }
-            }
-            else {
+            } else {
                 this.conn.removeAttribute(HEARBEAT_FAIL_COUNT);
             }
         }
@@ -132,8 +127,7 @@ public class GeckoHandler implements Handler {
             log.info("心跳检测失败，关闭连接" + conn.getRemoteSocketAddress() + ",分组信息" + conn.getGroupSet());
             try {
                 conn.close(true);
-            }
-            catch (final NotifyRemotingException e) {
+            } catch (final NotifyRemotingException e) {
                 log.error("关闭连接失败", e);
             }
         }
@@ -151,16 +145,15 @@ public class GeckoHandler implements Handler {
 
 
     private void responseThreadPoolBusy(final Session session, final Object msg,
-            final DefaultConnection defaultConnection) {
+                                        final DefaultConnection defaultConnection) {
         if (defaultConnection != null && msg instanceof RequestCommand) {
             try {
                 defaultConnection.response(defaultConnection
-                    .getRemotingContext()
-                    .getCommandFactory()
-                    .createBooleanAckCommand(((RequestCommand) msg).getRequestHeader(), ResponseStatus.THREADPOOL_BUSY,
-                        "线程池繁忙"));
-            }
-            catch (final NotifyRemotingException e) {
+                        .getRemotingContext()
+                        .getCommandFactory()
+                        .createBooleanAckCommand(((RequestCommand) msg).getRequestHeader(), ResponseStatus.THREADPOOL_BUSY,
+                                "线程池繁忙"));
+            } catch (final NotifyRemotingException e) {
                 this.onExceptionCaught(session, e);
             }
         }
@@ -176,8 +169,7 @@ public class GeckoHandler implements Handler {
     public void onExceptionCaught(final Session session, final Throwable throwable) {
         if (throwable.getCause() != null) {
             ExceptionMonitor.getInstance().exceptionCaught(throwable.getCause());
-        }
-        else {
+        } else {
             ExceptionMonitor.getInstance().exceptionCaught(throwable);
         }
     }
@@ -192,11 +184,9 @@ public class GeckoHandler implements Handler {
         }
         if (message instanceof RequestCommand) {
             this.processRequest(session, message, defaultConnection);
-        }
-        else if (message instanceof ResponseCommand) {
+        } else if (message instanceof ResponseCommand) {
             this.processResponse(message, defaultConnection);
-        }
-        else {
+        } else {
             throw new IllegalMessageException("未知的消息类型" + message);
         }
 
@@ -216,14 +206,13 @@ public class GeckoHandler implements Handler {
 
     @SuppressWarnings("unchecked")
     private <T extends RequestCommand> void processRequest(final Session session, final Object message,
-            final DefaultConnection defaultConnection) {
+                                                           final DefaultConnection defaultConnection) {
         final RequestProcessor<T> processor = this.getProcessorByMessage(message);
         if (processor == null) {
             log.error("未找到" + message.getClass().getCanonicalName() + "对应的处理器");
             this.responseNoProcessor(session, message, defaultConnection);
             return;
-        }
-        else {
+        } else {
             this.executeProcessor(session, (T) message, defaultConnection, processor);
         }
     }
@@ -234,8 +223,7 @@ public class GeckoHandler implements Handler {
         final RequestProcessor<T> processor;
         if (message instanceof HeartBeatRequestCommand) {
             processor = (RequestProcessor<T>) this.remotingContext.processorMap.get(HeartBeatRequestCommand.class);
-        }
-        else {
+        } else {
             processor = (RequestProcessor<T>) this.remotingContext.processorMap.get(message.getClass());
         }
         return processor;
@@ -244,22 +232,20 @@ public class GeckoHandler implements Handler {
 
     /**
      * 执行实际的Processor
-     * 
+     *
      * @param session
      * @param message
      * @param defaultConnection
      * @param processor
      */
     private <T extends RequestCommand> void executeProcessor(final Session session, final T message,
-            final DefaultConnection defaultConnection, final RequestProcessor<T> processor) {
+                                                             final DefaultConnection defaultConnection, final RequestProcessor<T> processor) {
         if (processor.getExecutor() == null) {
             processor.handleRequest(message, defaultConnection);
-        }
-        else {
+        } else {
             try {
                 processor.getExecutor().execute(new ProcessorRunner<T>(defaultConnection, processor, message));
-            }
-            catch (final RejectedExecutionException e) {
+            } catch (final RejectedExecutionException e) {
                 this.responseThreadPoolBusy(session, message, defaultConnection);
             }
         }
@@ -267,16 +253,15 @@ public class GeckoHandler implements Handler {
 
 
     private void responseNoProcessor(final Session session, final Object message,
-            final DefaultConnection defaultConnection) {
+                                     final DefaultConnection defaultConnection) {
         if (defaultConnection != null && message instanceof RequestCommand) {
             try {
                 defaultConnection.response(defaultConnection
-                    .getRemotingContext()
-                    .getCommandFactory()
-                    .createBooleanAckCommand(((RequestCommand) message).getRequestHeader(),
-                        ResponseStatus.NO_PROCESSOR, "未注册请求处理器，请求处理器类为" + message.getClass().getCanonicalName()));
-            }
-            catch (final NotifyRemotingException e) {
+                        .getRemotingContext()
+                        .getCommandFactory()
+                        .createBooleanAckCommand(((RequestCommand) message).getRequestHeader(),
+                                ResponseStatus.NO_PROCESSOR, "未注册请求处理器，请求处理器类为" + message.getClass().getCanonicalName()));
+            } catch (final NotifyRemotingException e) {
                 this.onExceptionCaught(session, e);
             }
         }
@@ -353,8 +338,7 @@ public class GeckoHandler implements Handler {
             while (!conn.isReady() && conn.isAllowReconnect() && count++ < 3) {
                 try {
                     conn.wait(5000);
-                }
-                catch (final InterruptedException e) {
+                } catch (final InterruptedException e) {
                     // 重设中断状态给上层处理
                     Thread.currentThread().interrupt();
                 }
@@ -379,12 +363,10 @@ public class GeckoHandler implements Handler {
                 // 可能关闭了
                 session.close();
                 log.error("建立的连接没有对应的connection");
-            }
-            else {
+            } else {
                 this.addConnection2Group(conn, groupSet);
             }
-        }
-        finally {
+        } finally {
             // 一定要通知就绪
             if (conn != null && conn.isConnected()) {
                 this.notifyConnectionReady(conn);
@@ -406,8 +388,7 @@ public class GeckoHandler implements Handler {
                 log.info("连接被强制断开，由于分组" + group + "没有发起过连接请求");
                 this.closeConnectionWithoutReconnect(conn);
                 return;
-            }
-            else {
+            } else {
                 final int maxConnCount = (Integer) attribute;
                 /**
                  * 判断分组连接数和加入分组放入同一个同步块，防止竞争条件
@@ -416,13 +397,11 @@ public class GeckoHandler implements Handler {
                     // 加入分组
                     if (this.remotingController.getConnectionCount(group) < maxConnCount) {
                         this.addConnectionToGroup(conn, group, maxConnCount);
-                    }
-                    else {
+                    } else {
                         // 尝试移除断开的连接，再次加入
                         if (this.removeDisconnectedConnection(group)) {
                             this.addConnectionToGroup(conn, group, maxConnCount);
-                        }
-                        else {
+                        } else {
                             // 确认是多余的，关闭
                             log.warn("连接数(" + conn.getRemoteSocketAddress() + ")超过设定值" + maxConnCount + "，连接将被关闭");
                             this.closeConnectionWithoutReconnect(conn);
@@ -437,8 +416,7 @@ public class GeckoHandler implements Handler {
     private void closeConnectionWithoutReconnect(final DefaultConnection conn) {
         try {
             conn.close(false);
-        }
-        catch (final NotifyRemotingException e) {
+        } catch (final NotifyRemotingException e) {
             log.error("关闭连接失败", e);
         }
     }
@@ -455,8 +433,7 @@ public class GeckoHandler implements Handler {
             for (final ConnectionLifeCycleListener listener : this.remotingContext.connectionLifeCycleListenerList) {
                 try {
                     listener.onConnectionReady(conn);
-                }
-                catch (final Throwable t) {
+                } catch (final Throwable t) {
                     log.error("调用ConnectionLifeCycleListener.onConnectionReady异常", t);
                 }
             }
@@ -478,8 +455,7 @@ public class GeckoHandler implements Handler {
                     if (!currentConn.isConnected()) {
                         disconnectedConn = currentConn;
                         break;
-                    }
-                    else {
+                    } else {
                         // 当前可用连接，确保已经是就绪状态，这是为了防止下列场景：
                         // 连接建立成功，但是超过了规定的超时时间，却仍然被加入了分组，没有通知就绪
                         if (!((DefaultConnection) currentConn).isReady() && !currentConn.getGroupSet().isEmpty()) {
@@ -491,8 +467,7 @@ public class GeckoHandler implements Handler {
         }
         if (disconnectedConn != null) {
             return currentConnList.remove(disconnectedConn);
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -532,7 +507,7 @@ public class GeckoHandler implements Handler {
             final int connectionCount = connections != null ? connections.size() : 0;
             if (connectionCount > 0) {
                 this.remotingContext.getConfig().setMaxScheduleWrittenBytes(
-                    Runtime.getRuntime().maxMemory() / 3 / connectionCount);
+                        Runtime.getRuntime().maxMemory() / 3 / connectionCount);
             }
         }
     }
@@ -546,10 +521,9 @@ public class GeckoHandler implements Handler {
     public void onSessionIdle(final Session session) {
         final Connection conn = this.remotingContext.getConnectionBySession((NioSession) session);
         try {
-            conn.send(conn.getRemotingContext().getCommandFactory().createHeartBeatCommand(), new HeartBeatListener(
-                conn), 5000, TimeUnit.MILLISECONDS);
-        }
-        catch (final NotifyRemotingException e) {
+            conn.send(conn.getRemotingContext().getCommandFactory().createHeartBeatCommand(),
+                    new HeartBeatListener(conn), 5000, TimeUnit.MILLISECONDS);
+        } catch (final NotifyRemotingException e) {
             log.error("发送心跳命令失败", e);
         }
 

@@ -72,8 +72,7 @@ public class TimerRefQueueUnitTest {
 
         try {
             this.queue.add(timerRef1);
-        }
-        catch (final IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             assertEquals("定时器已经被加入队列", e.getMessage());
         }
 
@@ -180,9 +179,7 @@ public class TimerRefQueueUnitTest {
     public void concurrentTest() throws Exception {
         final AtomicInteger duplicateDeleteCounter = new AtomicInteger(0);
         final ConcurrentTestCase testCase = new ConcurrentTestCase(100, 10000, new ConcurrentTestTask() {
-
             volatile TimerRef prevRef;
-
 
             public void run(final int index, final int times) throws Exception {
                 final TimerRef timerRef = new TimerRef(index * times, null);
@@ -257,8 +254,7 @@ public class TimerRefQueueUnitTest {
                     }
                 });
                 this.barrier.await();
-            }
-            catch (final Exception e) {
+            } catch (final Exception e) {
                 e.printStackTrace();
             }
         }
@@ -288,8 +284,7 @@ public class TimerRefQueueUnitTest {
                     removed.cancel();
                 }
                 this.barrier.await();
-            }
-            catch (final Exception e) {
+            } catch (final Exception e) {
                 e.printStackTrace();
             }
         }

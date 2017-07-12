@@ -17,10 +17,12 @@ package com.taobao.gecko.example.rpc.transport;
 
 import com.taobao.gecko.core.command.CommandFactory;
 import com.taobao.gecko.core.command.CommandHeader;
+import com.taobao.gecko.core.command.RequestCommand;
 import com.taobao.gecko.core.command.ResponseStatus;
 import com.taobao.gecko.core.command.kernel.BooleanAckCommand;
 import com.taobao.gecko.core.command.kernel.HeartBeatRequestCommand;
 import com.taobao.gecko.core.core.CodecFactory;
+import com.taobao.gecko.example.rpc.command.RpcCommand;
 import com.taobao.gecko.example.rpc.command.RpcRequest;
 import com.taobao.gecko.example.rpc.command.RpcResponse;
 import com.taobao.gecko.service.config.WireFormatType;
@@ -28,18 +30,16 @@ import com.taobao.gecko.service.config.WireFormatType;
 
 public class RpcWireFormatType extends WireFormatType {
 
-    public static final class RpcHeartBeatCommand implements HeartBeatRequestCommand {
+    public static final class RpcHeartBeatCommand extends RpcRequest implements HeartBeatRequestCommand {
+        public RpcHeartBeatCommand(){
+            super("heartBeat" + System.currentTimeMillis(), "heartBeat"+ System.currentTimeMillis(), null);
+        }
         public RpcRequest request = new RpcRequest("heartBeat" + System.currentTimeMillis(), "heartBeat"
                 + System.currentTimeMillis(), null);
 
 
         public CommandHeader getRequestHeader() {
-            return this.request;
-        }
-
-
-        public Integer getOpaque() {
-            return this.request.getOpaque();
+            return this;
         }
     }
 
@@ -67,12 +67,15 @@ public class RpcWireFormatType extends WireFormatType {
         return new CommandFactory() {
 
             public HeartBeatRequestCommand createHeartBeatCommand() {
-                return new RpcHeartBeatCommand();
+                RpcHeartBeatCommand command =  new RpcHeartBeatCommand();
+                return command;
             }
 
 
-            public BooleanAckCommand createBooleanAckCommand(final CommandHeader request,
-                    final ResponseStatus responseStatus, final String errorMsg) {
+            public BooleanAckCommand createBooleanAckCommand(
+                    final CommandHeader request,
+                    final ResponseStatus responseStatus,
+                    final String errorMsg) {
                 final BooleanAckCommand ack = new RpcResponse(request.getOpaque(), responseStatus, null) {
 
                     @Override

@@ -27,7 +27,6 @@ import com.taobao.gecko.example.rpc.transport.RpcWireFormatType.RpcHeartBeatComm
 /**
  * @author boyan
  * @Date 2011-2-17
- * 
  */
 public class RpcCodecFactory implements CodecFactory {
     static final byte REQ_MAGIC = (byte) 0x70;
@@ -47,24 +46,34 @@ public class RpcCodecFactory implements CodecFactory {
                 if (command.decode(buff)) {
                     session.removeAttribute(CURRENT_COMMAND);
                     return command;
-                }
-                else {
+                } else {
                     return null;
                 }
-            }
-            else {
+            } else {
                 byte magic = buff.get();
                 if (magic == REQ_MAGIC) {
-                    command = new RpcRequest();
-                }
-                else {
+                    buff.mark();
+                    buff.getInt();
+                    final int beanNameLen = buff.getInt();
+                    if (buff.remaining() >= beanNameLen) {
+                        byte[] data = new byte[beanNameLen];
+                        buff.get(data);
+                        String bname = new String(data);
+                        if(bname.startsWith("heart")){
+                            command = new RpcHeartBeatCommand();
+                        }else{
+                            command = new RpcRequest();
+                        }
+                        buff.reset();
+                    }else{
+                        command = new RpcRequest();
+                    }
+                } else {
                     command = new RpcResponse();
-
                 }
                 if (command.decode(buff)) {
                     return command;
-                }
-                else {
+                } else {
                     session.setAttribute(CURRENT_COMMAND, command);
                     return null;
                 }
@@ -76,9 +85,6 @@ public class RpcCodecFactory implements CodecFactory {
     static final class RpcEncoder implements Encoder {
 
         public IoBuffer encode(Object message, Session session) {
-            if (message instanceof RpcHeartBeatCommand) {
-                return ((RpcHeartBeatCommand) message).request.encode();
-            }
             return ((RpcCommand) message).encode();
         }
 

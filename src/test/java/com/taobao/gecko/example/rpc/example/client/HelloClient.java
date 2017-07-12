@@ -25,6 +25,10 @@ public class HelloClient {
         RpcProxyFactory factory = new RpcProxyFactory();
         Hello hello = factory.proxyRemote("rpc://localhost:8080", "hello", Hello.class);
         System.out.println(hello.sayHello("×¯Ïþµ¤", 10000));
+//        test_invoker_method(hello);
+    }
+
+    private static void test_invoker_method(Hello hello) {
         long start = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
             hello.add(1, 300);

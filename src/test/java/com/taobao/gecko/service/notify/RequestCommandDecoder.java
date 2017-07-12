@@ -25,12 +25,7 @@ import com.taobao.gecko.service.notify.request.NotifyRequestCommand;
 
 
 /**
- * 
- * 
- * 
- * 
  * @author boyan
- * 
  * @since 1.0, 2009-12-16 обнГ05:53:03
  */
 
@@ -44,8 +39,7 @@ public class RequestCommandDecoder implements CodecFactory.Decoder {
         if (decoderState.decodeCommand == null) {
             if (in.remaining() < Constants.REQUEST_HEADER_LENGTH) {
                 return null;
-            }
-            else {
+            } else {
                 this.decodeHeader(in, session, decoderState);
             }
         }
@@ -53,8 +47,7 @@ public class RequestCommandDecoder implements CodecFactory.Decoder {
             final NotifyRequestCommand requestCommand = (NotifyRequestCommand) decoderState.decodeCommand;
             if (in.remaining() < requestCommand.getTotalBodyLength()) {
                 return null;
-            }
-            else {
+            } else {
                 return this.decodeContent(in, decoderState, requestCommand);
             }
         }
@@ -63,7 +56,7 @@ public class RequestCommandDecoder implements CodecFactory.Decoder {
 
 
     private Object decodeContent(final IoBuffer in, final DecoderState decoderState,
-            final NotifyRequestCommand requestCommand) {
+                                 final NotifyRequestCommand requestCommand) {
         if (requestCommand.getTotalBodyLength() > 0) {
             if (requestCommand.getHeaderLength() > 0) {
                 final byte[] header = new byte[requestCommand.getHeaderLength()];
